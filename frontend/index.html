@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNISERVE — Autonomous Mission Control</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #07111f;
+    color: #eaf1fa;
+}
+
+header {
+    padding: 20px 32px;
+    background: #0b1728;
+    border-bottom: 1px solid #263952;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 27px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.system {
+    color: #79a8d8;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+}
+
+main {
+    max-width: 1450px;
+    margin: auto;
+    padding: 28px;
+}
+
+.mission-box,
+.panel,
+.metric {
+    background: #0c1a2d;
+    border: 1px solid #263952;
+    border-radius: 14px;
+}
+
+.mission-box {
+    padding: 22px;
+    margin-bottom: 22px;
+}
+
+h2 {
+    margin-top: 0;
+}
+
+textarea {
+    width: 100%;
+    min-height: 85px;
+    resize: vertical;
+    background: #07111f;
+    border: 1px solid #344b67;
+    color: #fff;
+    border-radius: 9px;
+    padding: 14px;
+    font-size: 15px;
+}
+
+button {
+    margin-top: 12px;
+    padding: 12px 24px;
+    border: 0;
+    border-radius: 8px;
+    background: #287cff;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+button:hover {
+    opacity: .9;
+}
+
+button:disabled {
+    opacity: .5;
+    cursor: wait;
+}
+
+.overview {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.metric {
+    padding: 17px;
+}
+
+.metric-label {
+    color: #8fa4bd;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.metric-value {
+    font-size: 24px;
+    font-weight: 800;
+    margin-top: 7px;
+}
+
+.status {
+    display: inline-block;
+    padding: 7px 13px;
+    border-radius: 20px;
+    background: #17304d;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.status.completed {
+    background: #123d31;
+    color: #5de0ad;
+}
+
+.status.replanning {
+    background: #49391a;
+    color: #f0c65c;
+}
+
+.status.executing {
+    background: #163b68;
+    color: #6eb0ff;
+}
+
+.dashboard {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 20px;
+}
+
+.panel {
+    padding: 20px;
+}
+
+.task {
+    padding: 15px;
+    margin-bottom: 11px;
+    border: 1px solid #293f59;
+    border-radius: 10px;
+    background: #091728;
+    border-left: 4px solid #667991;
+}
+
+.task.completed {
+    border-left-color: #42cf99;
+}
+
+.task.failed {
+    border-left-color: #ff6565;
+}
+
+.task.recovered {
+    border-left-color: #e0b94f;
+}
+
+.task-title {
+    font-weight: 800;
+}
+
+.meta {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #91a7bf;
+}
+
+.recovery {
+    margin-top: 10px;
+    padding: 11px;
+    border-radius: 8px;
+    background: #302817;
+    border: 1px solid #665326;
+    color: #f0cf69;
+    font-size: 12px;
+}
+
+.event {
+    padding: 11px 0;
+    border-bottom: 1px solid #263952;
+}
+
+.event:last-child {
+    border-bottom: 0;
+}
+
+.event-type {
+    font-weight: 800;
+    color: #70a9ef;
+    font-size: 13px;
+}
+
+.event-payload {
+    color: #8197af;
+    font-size: 11px;
+    margin-top: 4px;
+    word-break: break-word;
+}
+
+.empty {
+    color: #71869e;
+}
+
+.progress {
+    height: 8px;
+    background: #17263a;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 12px;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #3d8dff;
+    transition: width .4s ease;
+}
+
+@media(max-width: 950px) {
+    .overview {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media(max-width: 600px) {
+    main {
+        padding: 15px;
+    }
+
+    .overview {
+        grid-template-columns: 1fr;
+    }
+
+    header {
+        padding: 17px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div>
+        <div class="logo">UNISERVE</div>
+        <div class="system">AUTONOMOUS MISSION CONTROL</div>
+    </div>
+
+    <div id="headerStatus" class="status">READY</div>
+</header>
+
+<main>
+
+<section class="mission-box">
+
+    <h2>Launch Autonomous Mission</h2>
+
+    <textarea id="objective">Prepare and execute a technology training programme for 50 participants.</textarea>
+
+    <br>
+
+    <button id="launchButton" onclick="launchMission()">
+        LAUNCH MISSION
+    </button>
+
+</section>
+
+<section class="overview">
+
+    <div class="metric">
+        <div class="metric-label">Mission Status</div>
+        <div id="missionStatus" class="metric-value">READY</div>
+    </div>
+
+    <div class="metric">
+        <div class="metric-label">Tasks</div>
+        <div id="taskCount" class="metric-value">0 / 0</div>
+    </div>
+
+    <div class="metric">
+        <div class="metric-label">Recovery Events</div>
+        <div id="recoveryCount" class="metric-value">0</div>
+    </div>
+
+    <div class="metric">
+        <div class="metric-label">Autonomy</div>
+        <div id="autonomy" class="metric-value">STANDBY</div>
+    </div>
+
+</section>
+
+<div class="progress">
+    <div id="progressBar" class="progress-bar"></div>
+</div>
+
+<br>
+
+<div class="dashboard">
+
+<section class="panel">
+
+    <h2>Mission Tasks</h2>
+
+    <div id="tasks">
+        <div class="empty">
+            No mission launched yet.
+        </div>
+    </div>
+
+</section>
+
+<section class="panel">
+
+    <h2>Autonomous Event Trace</h2>
+
+    <div id="events">
+        <div class="empty">
+            Waiting for mission events...
+        </div>
+    </div>
+
+</section>
+
+</div>
+
+</main>
+
+<script>
+
+async function launchMission() {
+
+    const objective =
+        document.getElementById("objective").value.trim();
+
+    const button =
+        document.getElementById("launchButton");
+
+    if (!objective) {
+        alert("Enter a mission objective.");
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = "UNISERVE IS EXECUTING...";
+
+    setStatus("EXECUTING");
+
+    document.getElementById("missionStatus").textContent =
+        "EXECUTING";
+
+    document.getElementById("autonomy").textContent =
+        "ACTIVE";
+
+    document.getElementById("tasks").innerHTML =
+        '<div class="empty">Gemini is planning the mission...</div>';
+
+    document.getElementById("events").innerHTML =
+        '<div class="empty">Collecting autonomous events...</div>';
+
+    try {
+
+        const response = await fetch(
+            "http://127.0.0.1:8000/mission?objective=" +
+            encodeURIComponent(objective),
+            {
+                method: "POST"
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                "Mission API returned HTTP " + response.status
+            );
+        }
+
+        const mission = await response.json();
+
+        renderMission(mission);
+
+    } catch (error) {
+
+        setStatus("ERROR");
+
+        document.getElementById("missionStatus").textContent =
+            "ERROR";
+
+        document.getElementById("autonomy").textContent =
+            "OFFLINE";
+
+        document.getElementById("tasks").innerHTML =
+            '<div class="empty">' +
+            escapeHtml(error.message) +
+            '</div>';
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = "LAUNCH MISSION";
+    }
+}
+
+
+function renderMission(mission) {
+
+    const completed =
+        mission.tasks.filter(
+            t => t.status === "completed"
+        ).length;
+
+    const recoveryEvents =
+        mission.events.filter(
+            e =>
+                e.type === "EXCEPTION_DETECTED" ||
+                e.type === "PLAN_UPDATED"
+        ).length;
+
+    document.getElementById("missionStatus").textContent =
+        mission.status.toUpperCase();
+
+    document.getElementById("taskCount").textContent =
+        completed + " / " + mission.tasks.length;
+
+    document.getElementById("recoveryCount").textContent =
+        recoveryEvents;
+
+    document.getElementById("autonomy").textContent =
+        mission.status === "completed"
+        ? "PROVEN"
+        : "ACTIVE";
+
+    setStatus(mission.status.toUpperCase());
+
+    const progress =
+        mission.tasks.length
+        ? (completed / mission.tasks.length) * 100
+        : 0;
+
+    document.getElementById("progressBar").style.width =
+        progress + "%";
+
+
+    renderTasks(mission);
+
+    renderEvents(mission);
+}
+
+
+function renderTasks(mission) {
+
+    const container =
+        document.getElementById("tasks");
+
+    container.innerHTML = "";
+
+    mission.tasks.forEach((task, index) => {
+
+        const div =
+            document.createElement("div");
+
+        const hadFailure =
+            mission.events.some(
+                event =>
+                    event.type === "TASK_FAILED" &&
+                    event.payload &&
+                    event.payload.task === task.title
+            );
+
+        div.className =
+            "task " +
+            (
+                hadFailure
+                ? "recovered"
+                : task.status
+            );
+
+        let recoveryHTML = "";
+
+        if (hadFailure && task.status === "completed") {
+
+            recoveryHTML = `
+                <div class="recovery">
+                    ? AUTONOMOUS RECOVERY<br>
+                    Initial execution failed. UNISERVE detected
+                    the exception and resumed the task using an
+                    alternative strategy.
+                </div>
+            `;
+        }
+
+        div.innerHTML = `
+
+            <div class="task-title">
+                ${index + 1}. ${escapeHtml(task.title)}
+            </div>
+
+            <div class="meta">
+                Agent: ${escapeHtml(task.agent)}
+            </div>
+
+            <div class="meta">
+                Tool: ${escapeHtml(task.tool || "none")}
+            </div>
+
+            <div class="meta">
+                Status: ${task.status.toUpperCase()}
+            </div>
+
+            <div class="meta">
+                ${escapeHtml(task.description)}
+            </div>
+
+            ${recoveryHTML}
+
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+
+function renderEvents(mission) {
+
+    const container =
+        document.getElementById("events");
+
+    container.innerHTML = "";
+
+    mission.events.forEach(event => {
+
+        const div =
+            document.createElement("div");
+
+        div.className = "event";
+
+        let type = event.type;
+
+        if (type === "EXCEPTION_DETECTED") {
+            type = "? EXCEPTION DETECTED";
+        }
+
+        if (type === "PLAN_UPDATED") {
+            type = "? AUTONOMOUS REPLANNING";
+        }
+
+        if (type === "MISSION_COMPLETED") {
+            type = "? MISSION COMPLETED";
+        }
+
+        div.innerHTML = `
+            <div class="event-type">
+                ${escapeHtml(type)}
+            </div>
+
+            <div class="event-payload">
+                ${escapeHtml(
+                    JSON.stringify(event.payload)
+                )}
+            </div>
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+
+function setStatus(status) {
+
+    const element =
+        document.getElementById("headerStatus");
+
+    element.textContent = status;
+
+    element.className =
+        "status " +
+        status.toLowerCase();
+}
+
+
+function escapeHtml(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+</script>
+
+</body>
+</html>
