@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.backup
+.venv/
+.pytest_cache/
+messages.json
+outputs/
